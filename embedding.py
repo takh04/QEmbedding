@@ -69,15 +69,14 @@ def QuantumEmbedding2_inverse(input):
       exp_Z(input[j], wires=j, inverse=True)
       qml.Hadamard(wires=j)
 
-dev = qml.device('default.qubit', wires=8)
-@qml.qnode(dev, interface="torch")
-def circuit1(inputs): # circuit1 for model 1
-  QuantumEmbedding1(inputs[0:8])
-  QuantumEmbedding1_inverse(inputs[8:16])
-  return qml.probs(wires=range(8))
+
 
 @qml.qnode(dev, interface="torch")
-def circuit2(inputs): # circuit2 for model 2
+def distance_circuit1(inputs): 
+  QuantumEmbedding1(inputs[0:8])
+  return qml.density_matrix(wires=range(8))
+
+@qml.qnode(dev, interface="torch")
+def distance_circuit2(inputs):
   QuantumEmbedding2(inputs[0:16])
-  QuantumEmbedding2_inverse(inputs[16:32])
-  return qml.probs(wires=range(8))
+  return qml.density_matrix(wires=range(8))
