@@ -8,7 +8,7 @@ device = parameters.device
 print(f"Uisng Device: {device}\n")
 
 batch_size = 25
-iterations = 2000
+iterations = 5000
 
 #load data
 feature_reduction = 'PCA8'
@@ -30,7 +30,7 @@ for i in range(len(X_test)):
 X1_train, X0_train, X1_test, X0_test = torch.tensor(X1_train).to(device), torch.tensor(X0_train).to(device), torch.tensor(X1_test).to(device), torch.tensor(X0_test).to(device)
 
 #make new data
-def new_data():
+def new_data(batch_size):
     X1_new, X2_new, Y_new = [], [], []
     for i in range(batch_size):
         n, m = np.random.randint(len(X_train)), np.random.randint(len(X_train))
@@ -44,30 +44,41 @@ def new_data():
 
 # Train the model
 def train():
-    loss_history = []
+    current_loss = 1
+    loss_history, accuracy = [], []
     model = Hybrid_nn.HybridModel().to(device)
     model.train()
 
     loss_fn = torch.nn.MSELoss()
     opt = torch.optim.SGD(model.parameters(), lr=0.01)
     for it in range(iterations):
-        X1_batch, X2_batch, Y_batch = new_data()
+        X1_batch, X2_batch, Y_batch = new_data(batch_size)
         X1_batch, X2_batch, Y_batch = X1_batch.to(device), X2_batch.to(device), Y_batch.to(device)
 
         pred = model(X1_batch, X2_batch)
         pred, Y_batch = pred.to(torch.float32), Y_batch.to(torch.float32)
         loss = loss_fn(pred, Y_batch)
         loss_history.append(loss.item())
-        #loss.requires_grad = True
+        if parameters.measure == "HS-inner":
+            loss.requires_grad = True
 
         opt.zero_grad()
         loss.backward()
         opt.step()
 
-        if it % 10 == 0:
+        if it % 20 == 0:
             print(f"Iterations: {it} Loss: {loss.item()}")
+            if (current_loss - loss.item()) / current_loss < 0.01:
+                print('Loss convergered!')
+                break
+            else:
+                current_loss = loss.item()
         
-    return loss_history
+    torch.save(model.state_dict(), './model_state_dict.pt')
+    f = open("Loss History.txt", 'w')
+    f.write("Loss_History:\n")
+    f.write(str(loss_history))
+    f.close()
 
 
 def train_distance():
@@ -79,12 +90,11 @@ def train_distance():
     opt = torch.optim.SGD(model.parameters(), lr=0.01)
     for it in range(iterations):
         
-        batch_index = np.random.randint(0, len(min(len(X1_train), len(X0_train))), (batch_size,))
+        batch_index = np.random.randint(0, min(len(X1_train), len(X0_train)), (batch_size,))
         X1_batch, X0_batch = X1_train[batch_index], X0_train[batch_index]
         X1_batch, X0_batch = torch.tensor(X1_batch).to(device), torch.tensor(X0_batch).to(device)
 
-        distance = model(X1_batch, X0_batch)
-        loss = -1 * distance
+        loss = model(X1_batch, X0_batch)
         loss_history.append(loss.item())
 
         opt.zero_grad()

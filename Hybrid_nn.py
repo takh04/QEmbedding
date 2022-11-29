@@ -111,6 +111,7 @@ class HybridModel_distance(torch.nn.Module):
             nn.Softmax()
         )
 
+    def forward(self, x1, x0):
         if model == "model1":
             x1 = self.linear_relu_stack1(x1)
             x0 = self.linear_relu_stack1(x0)
@@ -131,6 +132,6 @@ class HybridModel_distance(torch.nn.Module):
 
         if distance_measure == 'Trace':
             eigvals = torch.linalg.eigvals(rho_diff)
-            return 0.5 * torch.real(torch.sum(torch.abs(eigvals)))
-        elif distance_measure == 'Hilbert-Schimidt':
-            return torch.trace(rho_diff @ rho_diff)
+            return -0.5 * torch.real(torch.sum(torch.abs(eigvals)))
+        elif distance_measure == 'Hilbert-Schmidt':
+            return -torch.trace(rho_diff @ rho_diff)
