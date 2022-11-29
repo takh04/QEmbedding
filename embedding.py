@@ -1,5 +1,7 @@
 import pennylane as qml
-N_layers = 3
+import parameters
+
+N_layers = parameters.N_layers
 
 def exp_Z(x, wires, inverse=False):
   if inverse == False:
@@ -68,15 +70,3 @@ def QuantumEmbedding2_inverse(input):
     for j in range(8):
       exp_Z(input[j], wires=j, inverse=True)
       qml.Hadamard(wires=j)
-
-
-
-@qml.qnode(dev, interface="torch")
-def distance_circuit1(inputs): 
-  QuantumEmbedding1(inputs[0:8])
-  return qml.density_matrix(wires=range(8))
-
-@qml.qnode(dev, interface="torch")
-def distance_circuit2(inputs):
-  QuantumEmbedding2(inputs[0:16])
-  return qml.density_matrix(wires=range(8))
