@@ -6,10 +6,9 @@ from torch.utils.data import DataLoader
 from torch import nn
 import matplotlib.pyplot as plt
 import embedding
+import parameters
 
-model = "model1"
-distance_measure = "Fidelity"
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model, measure, distance_measure, device, N_layers = parameters.get_parameters()
 print(f"Uisng Device: {device}\n")
 
 dev = qml.device('default.qubit', wires=8)
@@ -52,33 +51,25 @@ class HybridModel_distance(torch.nn.Module):
                 x2 = self.linear_relu_stack1(x2)
                 rhos1 = self.qlayer1(x1)
                 rhos2 = self.qlayer1(x2)
-                rho1 = torch.sum(rhos1, dim=0) / len(x1)
-                rho2 = torch.sum(rhos2, dim=0) / len(x2)
-                rho_diff = rho1 - rho2
-
-                if distance_measure == "Trace":
-                    eigvals = torch.linalg.eigvals(rho_diff)
-                    abs_eigvals = torch.abs(eigvals)
-                    return 0.5 * torch.real(torch.sum(abs_eigvals))
-                elif distance_measure == "HS":
-                    return torch.trace(rho_diff @ rho_diff)
-            
             elif model == 'model2':
                 x1 = self.linear_relu_stack2(x1)
                 x2 = self.linear_relu_stack2(x2)
                 rhos1 = self.qlayer2(x1)
                 rhos2 = self.qlayer2(x2)
-                rho1 = torch.sum(rhos1, dim=0) / len(x1)
-                rho2 = torch.sum(rhos2, dim=0) / len(x2)
-                rho_diff = rho1 - rho2
 
-                if distance_measure == "Trace":
-                    eigvals = torch.linalg.eigvals(rho_diff)
-                    abs_eigvals = torch.abs(eigvals)
-                    return 0.5 * torch.real(torch.sum(abs_eigvals))
-                elif distance_measure == "HS":
-                    return torch.trace(rho_diff @ rho_diff)
 
+            rho1 = torch.sum(rhos1, dim=0) / len(x1)
+            rho2 = torch.sum(rhos2, dim=0) / len(x2)
+            rho_diff = rho1 - rho2
+
+            if distance_measure == "Trace":
+                eigvals = torch.linalg.eigvals(rho_diff)
+                abs_eigvals = torch.abs(eigvals)
+                return 0.5 * torch.real(torch.sum(abs_eigvals))
+            elif distance_measure == "HS":
+                return torch.trace(rho_diff @ rho_diff)
+            elif distance_measure == "Fidelity":
+                return torch.trace(torch.sqrtm(rho1) @ rho2 @ torch.sqrtm(rho1))
 
 def model():
     return HybridModel_distance().to(device)

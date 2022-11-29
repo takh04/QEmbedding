@@ -6,10 +6,9 @@ from torch.utils.data import DataLoader
 from torch import nn
 import matplotlib.pyplot as plt
 import embedding
+import parameters
 
-model = "model1"
-measure = "Fidelity"
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model, measure, distance_measure, device, N_layers = parameters.get_parameters()
 print(f"Uisng Device: {device}\n")
 
 dev = qml.device('default.qubit', wires=8)
@@ -84,5 +83,5 @@ class HybridModel(torch.nn.Module):
                 return x / 2**8
 
   
-def model():
+def hybrid_model():
     return HybridModel().to(device)
