@@ -15,10 +15,19 @@ feature_reduction = 'PCA8'
 classes = [0,1]
 X_train, X_test, Y_train, Y_test = data.data_load_and_process('mnist', '2', feature_reduction=feature_reduction, classes=classes)
 
-trainfilter0, trainfilter1 = np.where((Y_train == classes[0])), np.where((Y_train == classes[1]))
-testfilter0, testfilter1 = np.where((Y_test == classes[0])), np.where((Y_test == classes[1]))
-X1_train, X0_train = X_train[trainfilter1], X_train[trainfilter0]
-X1_test, X0_test = X_test[testfilter1], X_test[testfilter0]
+X1_train, X0_train, X1_test, X0_test = [], [], [], []
+for i in range(len(X_train)):
+    if Y_train[i] == 1:
+        X1_train.append(X_train[i])
+    else:
+        X0_train.append(X_train[i])
+for i in range(len(X_test)):
+    if Y_test[i] == 1:
+        X1_test.append(X_test[i])
+    else:
+        X0_test.append(X_test[i])
+
+X1_train, X0_train, X1_test, X0_test = torch.tensor(X1_train).to(device), torch.tensor(X0_train).to(device), torch.tensor(X1_test).to(device), torch.tensor(X0_test).to(device)
 
 #make new data
 def new_data():
@@ -84,3 +93,5 @@ def train_distance():
 
         if it % 10 == 0:
             print(f"Iterations: {it} Loss: {loss.item()}")
+
+train()
