@@ -44,8 +44,8 @@ def new_data(batch_size):
 
 # Train the model
 def train():
-    current_loss = 1
-    loss_history, accuracy = [], []
+    current_loss, count = 1, 0
+    loss_history = []
     model = Hybrid_nn.HybridModel().to(device)
     model.train()
 
@@ -66,13 +66,16 @@ def train():
         loss.backward()
         opt.step()
 
-        if it % 20 == 0:
+        if it % 10 == 0:
             print(f"Iterations: {it} Loss: {loss.item()}")
-            if (current_loss - loss.item()) / current_loss < 0.01:
+        
+        if (current_loss - loss.item()) / current_loss < 0.01:
+            count = count + 1
+            if count == 5:
                 print('Loss convergered!')
                 break
-            else:
-                current_loss = loss.item()
+        else:
+            count = 0
         
     torch.save(model.state_dict(), './model_state_dict.pt')
     f = open("Loss History.txt", 'w')
