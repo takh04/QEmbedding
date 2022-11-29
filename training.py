@@ -58,7 +58,7 @@ def train():
         pred, Y_batch = pred.to(torch.float32), Y_batch.to(torch.float32)
         loss = loss_fn(pred, Y_batch)
         loss_history.append(loss.item())
-        loss.requires_grad = True
+        #loss.requires_grad = True
 
         opt.zero_grad()
         loss.backward()
