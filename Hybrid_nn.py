@@ -1,28 +1,23 @@
-import data
 import pennylane as qml
-from pennylane import numpy as np
 import torch
-from torch.utils.data import DataLoader
 from torch import nn
-import matplotlib.pyplot as plt
 import embedding
 import parameters
 
 model, measure, distance_measure, device, N_layers = parameters.get_parameters()
-print(f"Uisng Device: {device}\n")
 
 dev = qml.device('default.qubit', wires=8)
 @qml.qnode(dev, interface="torch")
 def circuit1(inputs): # circuit1 for model 1
-  embedding.QuantumEmbedding1(inputs[0:8])
-  embedding.QuantumEmbedding1_inverse(inputs[8:16])
-  return qml.probs(wires=range(8))
+    embedding.QuantumEmbedding1(inputs[0:8])
+    embedding.QuantumEmbedding1_inverse(inputs[8:16])
+    return qml.probs(wires=range(8))
 
 @qml.qnode(dev, interface="torch")
 def circuit2(inputs): # circuit2 for model 2
-  embedding.QuantumEmbedding2(inputs[0:16])
-  embedding.QuantumEmbedding2_inverse(inputs[16:32])
-  return qml.probs(wires=range(8))
+    embedding.QuantumEmbedding2(inputs[0:16])
+    embedding.QuantumEmbedding2_inverse(inputs[16:32])
+    return qml.probs(wires=range(8))
 
 class HybridModel(torch.nn.Module):
     def __init__(self):
@@ -31,7 +26,7 @@ class HybridModel(torch.nn.Module):
         self.qlayer2 = qml.qnn.TorchLayer(circuit2, weight_shapes={})
         self.matrix_fn1 = qml.matrix(circuit1)
         self.matrix_fn2 = qml.matrix(circuit2)
-        self.linear_relu_stack = nn.Sequential(
+        self.linear_relu_stack1 = nn.Sequential(
             nn.Linear(8, 10),
             nn.ReLU(),
             nn.Linear(10,10),
@@ -60,8 +55,8 @@ class HybridModel(torch.nn.Module):
             def forward(self, x1, x2):
                 x1 = self.linear_relu_stack1(x1)
                 x2 = self.linear_relu_stack1(x2)
-                x = torch.concat([x1, x2], 1)
-                x = [torch.real(torch.trace(self.matrix_fn1(a))) for a in x.to("cpu")]
+                x = torch.concat([x1, x2], 1).to("cpu")
+                x = [torch.real(torch.trace(self.matrix_fn1(a))) for a in x]
                 x = torch.tensor(x).to(device)
                 return x / 2**8
     
@@ -77,11 +72,65 @@ class HybridModel(torch.nn.Module):
             def forward(self, x1, x2):
                 x1 = self.linear_relu_stack2(x1)
                 x2 = self.linear_relu_stack2(x2)
-                x = torch.concat([x1, x2], 1)
-                x = [torch.real(torch.trace(self.matrix_fn2(a))) for a in x.to("cpu")]
+                x = torch.concat([x1, x2], 1).to("cpu")
+                x = [torch.real(torch.trace(self.matrix_fn2(a))) for a in x]
                 x = torch.tensor(x).to(device)
                 return x / 2**8
 
-  
-def hybrid_model():
-    return HybridModel().to(device)
+
+# Hybrid Model for distance measure
+@qml.qnode(dev, interface="torch")
+def distance_circuit1(inputs): 
+    embedding.QuantumEmbedding1(inputs[0:8])
+    return qml.density_matrix(wires=range(8))
+
+@qml.qnode(dev, interface="torch")
+def distance_circuit2(inputs):
+    embedding.QuantumEmbedding2(inputs[0:16])
+    return qml.density_matrix(wires=range(8))
+
+class HybridModel_distance(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.qlayer1_distance = qml.qnn.TorchLayer(distance_circuit1, weight_shapes={})
+        self.qlayer2_distance = qml.qnn.TorchLayer(distance_circuit2, weight_shapes={})
+        self.linear_relu_stack1 = nn.Sequential(
+            nn.Linear(8, 10),
+            nn.ReLU(),
+            nn.Linear(10,10),
+            nn.ReLU(),
+            nn.Linear(10,8),
+            nn.Softmax()
+        )
+        self.linear_relu_stack2 = nn.Sequential(
+            nn.Linear(8, 20),
+            nn.ReLU(),
+            nn.Linear(20,20),
+            nn.ReLU(),
+            nn.Linear(20,16),
+            nn.Softmax()
+        )
+
+        if model == "model1":
+            x1 = self.linear_relu_stack1(x1)
+            x0 = self.linear_relu_stack1(x0)
+            rhos1 = self.qlayer1_distance(x1)
+            rhos0 = self.qlayer1_distance(x0)
+            rho1 = torch.sum(rhos1, dim=0) / len(x1)
+            rho0 = torch.sum(rhos0, dim=0) / len(x0)
+            rho_diff = rho1 - rho0
+        
+        elif model == "model2":
+            x1 = self.linear_relu_stack2(x1)
+            x0 = self.linear_relu_stack2(x0)
+            rhos1 = self.qlayer2_distance(x1)
+            rhos0 = self.qlayer2_distance(x0)
+            rho1 = torch.sum(rhos1, dim=0) / len(x1)
+            rho0 = torch.sum(rhos0, dim=0) / len(x0)
+            rho_diff = rho1 - rho0
+
+        if distance_measure == 'Trace':
+            eigvals = torch.linalg.eigvals(rho_diff)
+            return 0.5 * torch.real(torch.sum(torch.abs(eigvals)))
+        elif distance_measure == 'Hilbert-Schimidt':
+            return torch.trace(rho_diff @ rho_diff)
