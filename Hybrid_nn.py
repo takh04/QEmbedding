@@ -4,7 +4,7 @@ from torch import nn
 import embedding
 import parameters
 
-model, measure, distance_measure, device, N_layers = parameters.get_parameters()
+model, measure, distance_measure, device = parameters.model, parameters.measure, parameters.distance_measure, parameters.device
 
 dev = qml.device('default.qubit', wires=8)
 @qml.qnode(dev, interface="torch")

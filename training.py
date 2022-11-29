@@ -7,8 +7,8 @@ import numpy as np
 device = parameters.device
 print(f"Uisng Device: {device}\n")
 
-batch_size = 50
-iterations = 500
+batch_size = 25
+iterations = 2000
 
 #load data
 feature_reduction = 'PCA8'
@@ -57,6 +57,7 @@ def train():
 
         if it % 10 == 0:
             print(f"Iterations: {it} Loss: {loss.item()}")
+        
     return loss_history
 
 
@@ -83,5 +84,3 @@ def train_distance():
 
         if it % 10 == 0:
             print(f"Iterations: {it} Loss: {loss.item()}")
-
-train()
