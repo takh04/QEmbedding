@@ -55,8 +55,8 @@ def train():
         X1_batch, X2_batch, Y_batch = X1_batch.to(device), X2_batch.to(device), Y_batch.to(device)
 
         pred = model(X1_batch, X2_batch)
-        pred, y = pred.to(torch.float32), y.to(torch.float32)
-        loss = loss_fn(pred, y)
+        pred, Y_batch = pred.to(torch.float32), Y_batch.to(torch.float32)
+        loss = loss_fn(pred, Y_batch)
         loss_history.append(loss.item())
         loss.requires_grad = True
 
