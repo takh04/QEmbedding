@@ -108,3 +108,4 @@ def train_distance():
             print(f"Iterations: {it} Loss: {loss.item()}")
 
 train()
+#train_distance()
