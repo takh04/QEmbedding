@@ -33,21 +33,21 @@ X1_valid_distance, X0_valid_distance = torch.tensor(X1_test[:300]).to(device), t
 X1_test_distance, X0_test_distance = torch.tensor(X1_test[300:]).to(device), torch.tensor(X0_test[300:]).to(device)
 
 #make new data for hybrid model
-def new_data(batch_size):
+def new_data(batch_size, X, Y):
     X1_new, X2_new, Y_new = [], [], []
     for i in range(batch_size):
-        n, m = np.random.randint(len(X_train)), np.random.randint(len(X_train))
-        X1_new.append(X_train[n])
-        X2_new.append(X_train[m])
-        if Y_train[n] == Y_train[m]:
+        n, m = np.random.randint(len(X)), np.random.randint(len(X))
+        X1_new.append(X[n])
+        X2_new.append(X[m])
+        if Y[n] == Y[m]:
             Y_new.append(1)
         else:
             Y_new.append(0)
     return torch.tensor(X1_new), torch.tensor(X2_new), torch.tensor(Y_new)
 
 N_valid, N_test = 300, 1000
-X1_new_valid, X2_new_valid, Y_new_valid = new_data(N_valid)
-X1_new_test, X2_new_test, Y_new_test = new_data(N_test)
+X1_new_valid, X2_new_valid, Y_new_valid = new_data(N_valid, X_test, Y_test)
+X1_new_test, X2_new_test, Y_new_test = new_data(N_test, X_test, Y_test)
 
 
 # Early Stopping and Accuracy
@@ -87,7 +87,7 @@ def train_hybrid():
     loss_fn = torch.nn.MSELoss()
     opt = torch.optim.SGD(model.parameters(), lr=0.01)
     for it in range(iterations):
-        X1_batch, X2_batch, Y_batch = new_data(batch_size)
+        X1_batch, X2_batch, Y_batch = new_data(batch_size, X_train, Y_train)
         X1_batch, X2_batch, Y_batch = X1_batch.to(device), X2_batch.to(device), Y_batch.to(device)
 
         pred = model(X1_batch, X2_batch)
