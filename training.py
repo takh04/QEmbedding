@@ -43,7 +43,7 @@ def new_data(batch_size, X, Y):
             Y_new.append(1)
         else:
             Y_new.append(0)
-    return torch.tensor(X1_new), torch.tensor(X2_new), torch.tensor(Y_new)
+    return torch.tensor(X1_new).to(device), torch.tensor(X2_new).to(device), torch.tensor(Y_new).to(device)
 
 N_valid, N_test = 300, 1000
 X1_new_valid, X2_new_valid, Y_new_valid = new_data(N_valid, X_test, Y_test)
