@@ -73,7 +73,7 @@ early_stopper = EarlyStoppter(patience=3, min_delta=0)
 def accuracy(predictions, labels):
     correct = 0
     for p,l in zip(predictions, labels):
-        if np.abs(p - 1) < 0.1:
+        if torch.abs(p - 1) < 0.1:
             correct += 1
     return correct / len(predictions) * 100
 
