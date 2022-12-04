@@ -1,5 +1,4 @@
 import pennylane as qml
-import parameters
 from pennylane import numpy as np
 
 N_layers = 3
