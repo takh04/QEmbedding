@@ -6,6 +6,7 @@ import parameters
 
 model, measure, device = parameters.model, parameters.measure, parameters.device
 dev = qml.device('default.qubit', wires=8)
+dev2 = qml.device('default.qubit', wires=16)
 
 
 # Hybrid Model 1
@@ -40,10 +41,8 @@ class HybridModel1(torch.nn.Module):
             x1 = self.linear_relu_stack1(x1)
             x2 = self.linear_relu_stack1(x2)
             x = torch.concat([x1, x2], 1).to("cpu")
-            print(x.requires_grad)
             x = [torch.real(torch.trace(self.matrix_fn1(a))) for a in x]
-            x = torch.tensor(x, requires_grad=True).to(device)
-            print(x.is_leaf)
+            x = torch.stack(x, dim = 0).to(device)
             return x / 2**8
 
 
@@ -81,7 +80,7 @@ class HybridModel2(torch.nn.Module):
             x2 = self.linear_relu_stack2(x2)
             x = torch.concat([x1, x2], 1).to("cpu")
             x = [torch.real(torch.trace(self.matrix_fn2(a))) for a in x]
-            x = torch.tensor(x).to(device)
+            x = torch.stack(x, dim=0).to(device)
             return x / 2**8
 
 
@@ -117,7 +116,7 @@ class HybridModel1_distance(torch.nn.Module):
             eigvals = torch.linalg.eigvals(rho_diff)
             return -0.5 * torch.real(torch.sum(torch.abs(eigvals)))
         elif measure == 'Hilbert-Schmidt':
-            return -torch.trace(rho_diff @ rho_diff)
+            return -0.5 * torch.trace(rho_diff @ rho_diff)
 
 
 
@@ -153,7 +152,7 @@ class HybridModel2_distance(torch.nn.Module):
             eigvals = torch.linalg.eigvals(rho_diff)
             return -0.5 * torch.real(torch.sum(torch.abs(eigvals)))
         elif measure == 'Hilbert-Schmidt':
-            return -torch.trace(rho_diff @ rho_diff)
+            return -0.5 * torch.trace(rho_diff @ rho_diff)
 
 def get_model():
     if model == 'model1':
