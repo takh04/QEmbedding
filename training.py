@@ -6,10 +6,8 @@ import numpy as np
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Uisng Device: {device}\n")
 
-#batch_size = 25
-#iterations = 1000
-batch_size = 5
-iterations = 40
+batch_size = 25
+iterations = 1000
 
 #load data
 feature_reduction = 'PCA8'
@@ -29,12 +27,9 @@ for i in range(len(X_test)):
         X0_test.append(X_test[i])
 
 # train, validation, test dataset for hybrid distance model
-#X1_train_distance, X0_train_distance = torch.tensor(X1_train).to(device), torch.tensor(X0_train).to(device)
-#X1_valid_distance, X0_valid_distance = torch.tensor(X1_test[:300]).to(device), torch.tensor(X0_test[:300]).to(device)
-#X1_test_distance, X0_test_distance = torch.tensor(X1_test[300:]).to(device), torch.tensor(X0_test[300:]).to(device)
 X1_train_distance, X0_train_distance = torch.tensor(X1_train).to(device), torch.tensor(X0_train).to(device)
-X1_valid_distance, X0_valid_distance = torch.tensor(X1_test[:10]).to(device), torch.tensor(X0_test[:10]).to(device)
-X1_test_distance, X0_test_distance = torch.tensor(X1_test[10:20]).to(device), torch.tensor(X0_test[10:20]).to(device)
+X1_valid_distance, X0_valid_distance = torch.tensor(X1_test[:300]).to(device), torch.tensor(X0_test[:300]).to(device)
+X1_test_distance, X0_test_distance = torch.tensor(X1_test[300:]).to(device), torch.tensor(X0_test[300:]).to(device)
 
 #make new data for hybrid model
 def new_data(batch_size, X, Y):
@@ -49,8 +44,7 @@ def new_data(batch_size, X, Y):
             Y_new.append(0)
     return torch.tensor(X1_new).to(device), torch.tensor(X2_new).to(device), torch.tensor(Y_new).to(device)
 
-#N_valid, N_test = 500, 10000
-N_valid, N_test = 10, 10
+N_valid, N_test = 500, 10000
 X1_new_valid, X2_new_valid, Y_new_valid = new_data(N_valid, X_test, Y_test)
 X1_new_test, X2_new_test, Y_new_test = new_data(N_test, X_test, Y_test)
 
