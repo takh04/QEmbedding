@@ -4,10 +4,8 @@ from torch import nn
 import embedding
 import parameters
 
-model, measure, device = parameters.model, parameters.measure, parameters.device
 dev = qml.device('default.qubit', wires=8)
-dev2 = qml.device('default.qubit', wires=16)
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hybrid Model 1
 @qml.qnode(dev, interface="torch")
@@ -16,7 +14,7 @@ def circuit1(inputs):
     embedding.QuantumEmbedding1_inverse(inputs[8:16])
     return qml.probs(wires=range(8))
 
-class HybridModel1(torch.nn.Module):
+class Model1_Fidelity(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.qlayer1 = qml.qnn.TorchLayer(circuit1, weight_shapes={})
@@ -28,22 +26,33 @@ class HybridModel1(torch.nn.Module):
             nn.ReLU(),
             nn.Linear(10,8)
         )
+    def forward(self, x1, x2):
+        x1 = self.linear_relu_stack1(x1)
+        x2 = self.linear_relu_stack1(x2)
+        x = torch.concat([x1, x2], 1)
+        x = self.qlayer1(x)
+        return x[:,0]
 
-    if measure == 'Fidelity':
-        def forward(self, x1, x2):
-            x1 = self.linear_relu_stack1(x1)
-            x2 = self.linear_relu_stack1(x2)
-            x = torch.concat([x1, x2], 1)
-            x = self.qlayer1(x)
-            return x[:,0]
-    elif measure == 'HS-inner':
-        def forward(self, x1, x2):
-            x1 = self.linear_relu_stack1(x1)
-            x2 = self.linear_relu_stack1(x2)
-            x = torch.concat([x1, x2], 1).to("cpu")
-            x = [torch.real(torch.trace(self.matrix_fn1(a))) for a in x]
-            x = torch.stack(x, dim = 0).to(device)
-            return x / 2**8
+
+class Model1_HSinner(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.qlayer1 = qml.qnn.TorchLayer(circuit1, weight_shapes={})
+        self.matrix_fn1 = qml.matrix(circuit1)
+        self.linear_relu_stack1 = nn.Sequential(
+            nn.Linear(8, 10),
+            nn.ReLU(),
+            nn.Linear(10,10),
+            nn.ReLU(),
+            nn.Linear(10,8)
+        )
+    def forward(self, x1, x2):
+        x1 = self.linear_relu_stack1(x1)
+        x2 = self.linear_relu_stack1(x2)
+        x = torch.concat([x1, x2], 1).to("cpu")
+        x = [torch.real(torch.trace(self.matrix_fn1(a))) for a in x]
+        x = torch.stack(x, dim = 0).to(device)
+        return x / 2**8
 
 
 
@@ -54,7 +63,7 @@ def circuit2(inputs):
     embedding.QuantumEmbedding2_inverse(inputs[16:32])
     return qml.probs(wires=range(8))
 
-class HybridModel2(torch.nn.Module):
+class Model2_Fidelity(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.qlayer2 = qml.qnn.TorchLayer(circuit2, weight_shapes={})
@@ -66,23 +75,32 @@ class HybridModel2(torch.nn.Module):
             nn.ReLU(),
             nn.Linear(20,16)
         )
-    
-    if measure == 'Fidelity':
-        def forward(self, x1, x2):
-            x1 = self.linear_relu_stack2(x1)
-            x2 = self.linear_relu_stack2(x2)
-            x = torch.concat([x1, x2], 1)
-            x = self.qlayer2(x)
-            return x[:,0]
-    elif measure == 'HS-inner':
-        def forward(self, x1, x2):
-            x1 = self.linear_relu_stack2(x1)
-            x2 = self.linear_relu_stack2(x2)
-            x = torch.concat([x1, x2], 1).to("cpu")
-            x = [torch.real(torch.trace(self.matrix_fn2(a))) for a in x]
-            x = torch.stack(x, dim=0).to(device)
-            return x / 2**8
+    def forward(self, x1, x2):
+        x1 = self.linear_relu_stack2(x1)
+        x2 = self.linear_relu_stack2(x2)
+        x = torch.concat([x1, x2], 1)
+        x = self.qlayer2(x)
+        return x[:,0]
 
+class Model2_HSinner(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.qlayer2 = qml.qnn.TorchLayer(circuit2, weight_shapes={})
+        self.matrix_fn2 = qml.matrix(circuit2)
+        self.linear_relu_stack2 = nn.Sequential(
+            nn.Linear(8, 20),
+            nn.ReLU(),
+            nn.Linear(20,20),
+            nn.ReLU(),
+            nn.Linear(20,16)
+        )
+    def forward(self, x1, x2):
+        x1 = self.linear_relu_stack2(x1)
+        x2 = self.linear_relu_stack2(x2)
+        x = torch.concat([x1, x2], 1).to("cpu")
+        x = [torch.real(torch.trace(self.matrix_fn2(a))) for a in x]
+        x = torch.stack(x, dim=0).to(device)
+        return x / 2**8
 
 
 # Hybrid Distance Model1
@@ -91,7 +109,7 @@ def distance_circuit1(inputs):
     embedding.QuantumEmbedding1(inputs[0:8])
     return qml.density_matrix(wires=range(8))
 
-class HybridModel1_distance(torch.nn.Module):
+class DistanceModel1_Trace(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.qlayer1_distance = qml.qnn.TorchLayer(distance_circuit1, weight_shapes={})
@@ -102,7 +120,6 @@ class HybridModel1_distance(torch.nn.Module):
             nn.ReLU(),
             nn.Linear(10,8)
         )
-
     def forward(self, x1, x0):
         x1 = self.linear_relu_stack1(x1)
         x0 = self.linear_relu_stack1(x0)
@@ -111,14 +128,30 @@ class HybridModel1_distance(torch.nn.Module):
         rho1 = torch.sum(rhos1, dim=0) / len(x1)
         rho0 = torch.sum(rhos0, dim=0) / len(x0)
         rho_diff = rho1 - rho0
-        
-        if measure == 'Trace':
-            eigvals = torch.linalg.eigvals(rho_diff)
-            return -0.5 * torch.real(torch.sum(torch.abs(eigvals)))
-        elif measure == 'Hilbert-Schmidt':
-            return -0.5 * torch.trace(rho_diff @ rho_diff)
+        eigvals = torch.linalg.eigvals(rho_diff)
+        return -0.5 * torch.real(torch.sum(torch.abs(eigvals)))
 
 
+class DistanceModel1_HS(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.qlayer1_distance = qml.qnn.TorchLayer(distance_circuit1, weight_shapes={})
+        self.linear_relu_stack1 = nn.Sequential(
+            nn.Linear(8, 10),
+            nn.ReLU(),
+            nn.Linear(10,10),
+            nn.ReLU(),
+            nn.Linear(10,8)
+        )
+    def forward(self, x1, x0):
+        x1 = self.linear_relu_stack1(x1)
+        x0 = self.linear_relu_stack1(x0)
+        rhos1 = self.qlayer1_distance(x1)
+        rhos0 = self.qlayer1_distance(x0)
+        rho1 = torch.sum(rhos1, dim=0) / len(x1)
+        rho0 = torch.sum(rhos0, dim=0) / len(x0)
+        rho_diff = rho1 - rho0
+        return -0.5 * torch.trace(rho_diff @ rho_diff)
 
 
 # Hybrid Distance Model 2
@@ -127,7 +160,7 @@ def distance_circuit2(inputs):
     embedding.QuantumEmbedding2(inputs[0:16])
     return qml.density_matrix(wires=range(8))
 
-class HybridModel2_distance(torch.nn.Module):
+class DistanceModel2_Trace(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.qlayer2_distance = qml.qnn.TorchLayer(distance_circuit2, weight_shapes={})
@@ -138,7 +171,6 @@ class HybridModel2_distance(torch.nn.Module):
             nn.ReLU(),
             nn.Linear(20,16)
         )
-
     def forward(self, x1, x0):
         x1 = self.linear_relu_stack2(x1)
         x0 = self.linear_relu_stack2(x0)
@@ -147,19 +179,47 @@ class HybridModel2_distance(torch.nn.Module):
         rho1 = torch.sum(rhos1, dim=0) / len(x1)
         rho0 = torch.sum(rhos0, dim=0) / len(x0)
         rho_diff = rho1 - rho0
+        eigvals = torch.linalg.eigvals(rho_diff)
+        return -0.5 * torch.real(torch.sum(torch.abs(eigvals)))
 
-        if measure == 'Trace':
-            eigvals = torch.linalg.eigvals(rho_diff)
-            return -0.5 * torch.real(torch.sum(torch.abs(eigvals)))
-        elif measure == 'Hilbert-Schmidt':
-            return -0.5 * torch.trace(rho_diff @ rho_diff)
 
-def get_model():
-    if model == 'model1':
-        return HybridModel1()
-    elif model == 'model2':
-        return HybridModel2()
-    elif model == 'model1_distance':
-        return HybridModel1_distance()
-    elif model == 'model2_distance':
-        return HybridModel2_distance()
+class DistanceModel2_HS(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.qlayer2_distance = qml.qnn.TorchLayer(distance_circuit2, weight_shapes={})
+        self.linear_relu_stack2 = nn.Sequential(
+            nn.Linear(8, 20),
+            nn.ReLU(),
+            nn.Linear(20,20),
+            nn.ReLU(),
+            nn.Linear(20,16)
+        )
+    def forward(self, x1, x0):
+        x1 = self.linear_relu_stack2(x1)
+        x0 = self.linear_relu_stack2(x0)
+        rhos1 = self.qlayer2_distance(x1)
+        rhos0 = self.qlayer2_distance(x0)
+        rho1 = torch.sum(rhos1, dim=0) / len(x1)
+        rho0 = torch.sum(rhos0, dim=0) / len(x0)
+        rho_diff = rho1 - rho0
+        return -0.5 * torch.trace(rho_diff @ rho_diff)
+
+
+# Get model function
+def get_model(model):
+    if model == 'Model1_Fidelity':
+        return Model1_Fidelity()
+    elif model == 'Model1_HSinner':
+        return Model1_HSinner()
+    elif model == 'Model2_Fidelity':
+        return Model2_Fidelity()
+    elif model == 'Model2_HSinner':
+        return Model2_HSinner()
+    elif model == 'DistanceModel1_Trace':
+        return DistanceModel1_Trace()
+    elif model == 'DistanceModel1_HS':
+        return DistanceModel1_HS()
+    elif model == 'DistanceModel2_Trace':
+        return DistanceModel2_Trace()
+    elif model == 'DistanceModel2_HS':
+        return DistanceModel2_HS()

@@ -2,7 +2,7 @@ import pennylane as qml
 import parameters
 from pennylane import numpy as np
 
-N_layers = parameters.N_layers
+N_layers = 3
 
 def exp_Z(x, wires, inverse=False):
   if inverse == False:
