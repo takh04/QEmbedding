@@ -67,7 +67,6 @@ class EarlyStoppter:
                 return True
         return False
 
-early_stopper = EarlyStoppter(patience=3, min_delta=0)
 
 def accuracy(predictions, labels):
     correct90, correct80 = 0, 0
@@ -84,6 +83,7 @@ def train_models(model_name):
     train_loss, valid_loss, valid_acc90, valid_acc80 = [], [], [], []
     model = Hybrid_nn.get_model(model_name).to(device)
     model.train()
+    early_stopper = EarlyStoppter(patience=3, min_delta=0)
 
     loss_fn = torch.nn.MSELoss()
     opt = torch.optim.SGD(model.parameters(), lr=0.01)
@@ -145,6 +145,7 @@ def train_distance_models(model_name):
     train_loss, valid_loss = [], []
     model = Hybrid_nn.get_model(model_name).to(device)
     model.train()
+    early_stopper = EarlyStoppter(patience=3, min_delta=0)
 
     opt = torch.optim.SGD(model.parameters(), lr=0.1)
     for it in range(iterations):
