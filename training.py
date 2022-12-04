@@ -1,10 +1,9 @@
 import data
 import torch
-import parameters
 import Hybrid_nn
 import numpy as np
 
-device = parameters.device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Uisng Device: {device}\n")
 
 batch_size = 25
@@ -45,7 +44,7 @@ def new_data(batch_size, X, Y):
             Y_new.append(0)
     return torch.tensor(X1_new).to(device), torch.tensor(X2_new).to(device), torch.tensor(Y_new).to(device)
 
-N_valid, N_test = 300, 1000
+N_valid, N_test = 500, 10000
 X1_new_valid, X2_new_valid, Y_new_valid = new_data(N_valid, X_test, Y_test)
 X1_new_test, X2_new_test, Y_new_test = new_data(N_test, X_test, Y_test)
 
@@ -71,17 +70,19 @@ class EarlyStoppter:
 early_stopper = EarlyStoppter(patience=3, min_delta=0)
 
 def accuracy(predictions, labels):
-    correct = 0
+    correct90, correct80 = 0, 0
     for p,l in zip(predictions, labels):
-        if torch.abs(p - 1) < 0.1:
-            correct += 1
-    return correct / len(predictions) * 100
+        if torch.abs(p - l) < 0.1:
+            correct90 += 1
+        elif torch.abs(p - l) < 0.2:
+            correct80 += 1
+    return correct90 / len(predictions) * 100, (correct80 + correct90) / len(predictions) * 100, 
 
 
-# Train Hybrid models
-def train_hybrid():
-    train_loss, valid_loss, valid_acc = [], [], []
-    model = Hybrid_nn.get_model().to(device)
+# Train model1 and model2
+def train_models(model_name):
+    train_loss, valid_loss, valid_acc90, valid_acc80 = [], [], [], []
+    model = Hybrid_nn.get_model(model_name).to(device)
     model.train()
 
     loss_fn = torch.nn.MSELoss()
@@ -104,10 +105,11 @@ def train_hybrid():
             with torch.no_grad():
                 pred_validation = model(X1_new_valid, X2_new_valid)
                 loss_validation = loss_fn(pred_validation, Y_new_valid)
-                accuracy_validation = accuracy(pred_validation, Y_new_valid)
+                accuracy90_validation, accuracy80_validation = accuracy(pred_validation, Y_new_valid)
                 valid_loss.append(loss_validation.item())
-                valid_acc.append(accuracy_validation)
-                print(f"Validation Loss: {loss_validation}, Validation Accuracy: {accuracy_validation}%")
+                valid_acc90.append(accuracy90_validation)
+                valid_acc80.append(accuracy80_validation)
+                print(f"Validation Loss: {loss_validation}, Validation Accuracy (>0.9): {accuracy90_validation}%, Validation Accuracy (>0.8): {accuracy80_validation}%")
                 if early_stopper.early_stop(loss_validation):
                     print("Loss converged!")
                     break
@@ -115,29 +117,33 @@ def train_hybrid():
     with torch.no_grad():
         pred_test = model(X1_new_test, X2_new_test)
         loss_test = loss_fn(pred_test, Y_new_test)
-        accuracy_test = accuracy(pred_test, Y_new_test)
-        print(f"Test Loss: {loss_test}, Test Accuracy: {accuracy_test}%")
+        accuracy90_test, accuracy80_test = accuracy(pred_test, Y_new_test)
+        print(f"Test Loss: {loss_test}, Test Accuracy (>0.9): {accuracy90_test}%, Test Accuracy (>0.8): {accuracy80_test}%")
 
-    f = open(f"Results/{parameters.model} + {parameters.measure}.txt", 'w')
+    f = open(f"Results/{model_name}.txt", 'w')
     f.write("Loss History:\n")
     f.write(str(train_loss))
     f.write("\n\n")
     f.write("Validation Loss History:\n")
     f.write(str(valid_loss))
     f.write("\n")
-    f.write("Validation Accuracy History:\n")
-    f.write(str(valid_acc))
+    f.write("Validation Accuracy90 History:\n")
+    f.write(str(valid_acc90))
+    f.write("\n\n")
+    f.write("Validation Accuracy80 History:\n")
+    f.write(str(valid_acc80))
     f.write("\n\n")
     f.write(f"Test Loss: {loss_test}\n")
-    f.write(f"Test Accuracy: {accuracy_test}\n")
+    f.write(f"Test Accuracy90: {accuracy90_test}\n")
+    f.write(f"Test Accuracy80: {accuracy80_test}\n")
     f.close()
-    torch.save(model.state_dict(), f'Results/{parameters.model} + {parameters.measure}.pt')
+    torch.save(model.state_dict(), f'Results/{model_name}.pt')
 
 
-# Train distance models
-def train_hybrid_distance():
+# Train distance model1 and distance model2
+def train_distance_models(model_name):
     train_loss, valid_loss = [], []
-    model = Hybrid_nn.get_model().to(device)
+    model = Hybrid_nn.get_model(model_name).to(device)
     model.train()
 
     opt = torch.optim.SGD(model.parameters(), lr=0.1)
@@ -168,7 +174,7 @@ def train_hybrid_distance():
         loss_test = model(X1_test_distance, X0_test_distance)
         print(f"Test Loss: {loss_test.item()}")
 
-    f = open(f"Results/{parameters.model} + {parameters.measure}.txt", 'w')
+    f = open(f"Results/{model_name}.txt", 'w')
     f.write("Loss History:\n")
     f.write(str(train_loss))
     f.write("\n\n")
@@ -177,12 +183,15 @@ def train_hybrid_distance():
     f.write("\n\n")
     f.write(f"Test Loss: {loss_test.item()}\n")
     f.close()
-    torch.save(model.state_dict(), f'Results/{parameters.model} + {parameters.measure}.pt')
+    torch.save(model.state_dict(), f'Results/{model_name}.pt')
 
-def train():
-    if parameters.model == 'model1' or parameters.model == 'model2':
-        train_hybrid()
-    else:
-        train_hybrid_distance()
 
-train()
+def train(model_names):
+    for model_name in model_names:
+        if model_name in ['Model1_Fidelity', 'Model1_HSinner', 'Model2_Fidelity', 'Model2_HSinner']:
+            train_models(model_name)
+        elif model_name in ['DistanceModel1_Trace', 'DistanceModel1-HS', 'DistanceModel2_Trace', 'DistanceModel2_HS']:
+            train_distance_models(model_name)
+
+model_names = ['Model1_Fidelity', 'Model1_HSinner', 'Model2_Fidelity', 'Model2_HSinner', 'DistanceModel1_Trace', 'DistanceModel1_HS', 'DistanceModel2_Trace', 'DistanceModel2_HS']
+train(model_names)

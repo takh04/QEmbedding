@@ -2,7 +2,6 @@ import pennylane as qml
 import torch
 from torch import nn
 import embedding
-import parameters
 
 dev = qml.device('default.qubit', wires=8)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
