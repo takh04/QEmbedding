@@ -191,7 +191,7 @@ def train(model_names):
     for model_name in model_names:
         if model_name in ['Model1_Fidelity', 'Model1_HSinner', 'Model2_Fidelity', 'Model2_HSinner']:
             train_models(model_name)
-        elif model_name in ['DistanceModel1_Trace', 'DistanceModel1-HS', 'DistanceModel2_Trace', 'DistanceModel2_HS']:
+        elif model_name in ['DistanceModel1_Trace', 'DistanceModel1_HS', 'DistanceModel2_Trace', 'DistanceModel2_HS']:
             train_distance_models(model_name)
 
 model_names = ['Model1_Fidelity', 'Model1_HSinner', 'Model2_Fidelity', 'Model2_HSinner', 'DistanceModel1_Trace', 'DistanceModel1_HS', 'DistanceModel2_Trace', 'DistanceModel2_HS']
