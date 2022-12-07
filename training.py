@@ -83,7 +83,8 @@ def train_models(model_name):
     train_loss, valid_loss, valid_acc90, valid_acc80 = [], [], [], []
     model = Hybrid_nn.get_model(model_name).to(device)
     model.train()
-    early_stopper = EarlyStoppter(patience=3, min_delta=0)
+    early_stopper = EarlyStoppter(patience=10, min_delta=0)
+    early_stopped, final_it = False, 0
 
     loss_fn = torch.nn.MSELoss()
     opt = torch.optim.SGD(model.parameters(), lr=0.01)
@@ -100,7 +101,7 @@ def train_models(model_name):
         loss.backward()
         opt.step()
 
-        if it % 20 == 0:
+        if it % 10 == 0:
             print(f"Iterations: {it} Loss: {loss.item()}")
             with torch.no_grad():
                 pred_validation = model(X1_new_valid, X2_new_valid)
@@ -112,6 +113,8 @@ def train_models(model_name):
                 print(f"Validation Loss: {loss_validation}, Validation Accuracy (>0.9): {accuracy90_validation}%, Validation Accuracy (>0.8): {accuracy80_validation}%")
                 if early_stopper.early_stop(loss_validation):
                     print("Loss converged!")
+                    early_stopped = True
+                    final_it = it
                     break
     
     with torch.no_grad():
@@ -136,6 +139,8 @@ def train_models(model_name):
     f.write(f"Test Loss: {loss_test}\n")
     f.write(f"Test Accuracy90: {accuracy90_test}\n")
     f.write(f"Test Accuracy80: {accuracy80_test}\n")
+    if early_stopped == True:
+        f.write(f"Validation Loss converged. Early Stopped at iterations {final_it}")
     f.close()
     torch.save(model.state_dict(), f'Results/{model_name}.pt')
 
@@ -145,7 +150,8 @@ def train_distance_models(model_name):
     train_loss, valid_loss = [], []
     model = Hybrid_nn.get_model(model_name).to(device)
     model.train()
-    early_stopper = EarlyStoppter(patience=3, min_delta=0)
+    early_stopper = EarlyStoppter(patience=10, min_delta=0)
+    early_stopped, final_it = False, 0
 
     opt = torch.optim.SGD(model.parameters(), lr=0.1)
     for it in range(iterations):
@@ -169,6 +175,8 @@ def train_distance_models(model_name):
                 print(f"Validation Loss: {loss_validation}")
                 if early_stopper.early_stop(loss_validation):
                     print("Loss converged!")
+                    early_stopped = True
+                    final_it = it
                     break
 
     with torch.no_grad():
@@ -183,6 +191,8 @@ def train_distance_models(model_name):
     f.write(str(valid_loss))
     f.write("\n\n")
     f.write(f"Test Loss: {loss_test.item()}\n")
+    if early_stopped == True:
+        f.write(f"Validation Loss converged. Early Stopped at iterations {final_it}")
     f.close()
     torch.save(model.state_dict(), f'Results/{model_name}.pt')
 
