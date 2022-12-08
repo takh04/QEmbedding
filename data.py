@@ -20,8 +20,12 @@ def data_load_and_process(dataset, ROI, feature_reduction='resize256', classes=[
             x_train.values.tolist(), x_test.values.tolist(), y_train.values.tolist(), y_test.values.tolist()
         y_train = [1 if y == 1 else -1 for y in y_train]
         y_test = [1 if y ==1 else -1 for y in y_test]
-    elif dataset == 'mnist':
-        (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+
+    elif dataset == 'mnist' or dataset == 'fashion':
+        if dataset == 'mnist':
+            (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+        elif dataset == 'fashion':
+            (x_train, y_train), (x_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
         x_train, x_test = x_train[..., np.newaxis] / 255.0, x_test[..., np.newaxis] / 255.0
         if len(classes) == 2:
             train_filter_tf = np.where((y_train == classes[0] ) | (y_train == classes[1] ))
@@ -34,6 +38,7 @@ def data_load_and_process(dataset, ROI, feature_reduction='resize256', classes=[
         x_train = tf.image.resize(x_train[:], (256, 1)).numpy()
         x_test = tf.image.resize(x_test[:], (256, 1)).numpy()
         x_train, x_test = tf.squeeze(x_train).numpy(), tf.squeeze(x_test).numpy()
+    
 
 
     if feature_reduction == 'PCA8':
