@@ -52,6 +52,17 @@ def data_load_and_process(dataset, ROI, feature_reduction='resize256', classes=[
         for x in X_test:
             x = (x - x.min()) * (np.pi / (x.max() - x.min()))
             x_test.append(x)
+    
+    if feature_reduction == 'PCA4':
+        X_train = PCA(4).fit_transform(x_train)
+        X_test = PCA(4).fit_transform(x_test)
+        x_train, x_test = [], []
+        for x in X_train:
+            x = (x - x.min()) * (np.pi / (x.max() - x.min()))
+            x_train.append(x)
+        for x in X_test:
+            x = (x - x.min()) * (np.pi / (x.max() - x.min()))
+            x_test.append(x)
 
     return x_train, x_test, y_train, y_test
 
