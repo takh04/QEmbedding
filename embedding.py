@@ -70,3 +70,25 @@ def QuantumEmbedding2_inverse(input):
     for j in range(8):
       exp_Z(input[j], wires=j, inverse=True)
       qml.Hadamard(wires=j)
+
+
+      
+# Add 4 qubit embedding for demonstration
+def Four_QuantumEmbedding(input):
+  for i in range(N_layers):
+    for j in range(4):
+      qml.Hadamard(wires=j)
+      exp_Z(input[j], wires=j)
+    for k in range(3):
+      exp_ZZ2(input[k], input[k+1], wires=[k,k+1])
+    exp_ZZ2(input[3], input[0], wires=[3, 0])
+
+def Four_QuantumEmbedding_inverse(input):
+  for i in range(N_layers):
+    exp_ZZ2(input[3], input[0], wires=[3, 0], inverse=True)
+    for k in reversed(range(3)):
+      exp_ZZ2(input[k], input[k+1], wires=[k,k+1], inverse=True)
+    qml.Barrier()
+    for j in range(4):
+      exp_Z(input[j], wires=j, inverse=True)
+      qml.Hadamard(wires=j)
