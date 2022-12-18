@@ -209,11 +209,11 @@ class Model_Amplitude(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(16,20),
+            nn.Linear(16,32),
             nn.ReLU(),
-            nn.Linear(20,20),
+            nn.Linear(32,32),
             nn.ReLU(),
-            nn.Linear(20,16)
+            nn.Linear(32,16)
         )
     def forward(self, x1, x0):
         x1 = self.linear_relu_stack(x1)

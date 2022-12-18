@@ -7,7 +7,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Uisng Device: {device}\n")
 
 batch_size = 25
-iterations = 1000
+#iterations = 1000
+iterations = 2000              #use this when training Model_Amplitude
 
 #load data
 #feature_reduction = 'PCA8'
