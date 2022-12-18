@@ -218,7 +218,7 @@ class Model_Amplitude(torch.nn.Module):
     def forward(self, x1, x0):
         x1 = self.linear_relu_stack(x1)
         x0 = self.linear_relu_stack(x0)
-        return torch.dot(x1, x0)
+        return torch.sum(x1 * x0, dim=-1)
 
 # Get model function
 def get_model(model):
