@@ -204,6 +204,22 @@ class DistanceModel2_HS(torch.nn.Module):
         return -0.5 * torch.trace(rho_diff @ rho_diff)
 
 
+# Training Amplitude Model
+class Model_Amplitude(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(16,20),
+            nn.ReLU(),
+            nn.Linear(20,20),
+            nn.ReLU(),
+            nn.Linear(20,16)
+        )
+    def forward(self, x1, x0):
+        x1 = self.linear_relu_stack(x1)
+        x0 = self.linear_relu_stack(x0)
+        return torch.dot(x1, x0)
+
 # Get model function
 def get_model(model):
     if model == 'Model1_Fidelity':
@@ -222,3 +238,5 @@ def get_model(model):
         return DistanceModel2_Trace()
     elif model == 'DistanceModel2_HS':
         return DistanceModel2_HS()
+    elif model == 'Model_Amplitude':
+        return  Model_Amplitude()

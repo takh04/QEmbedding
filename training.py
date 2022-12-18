@@ -26,11 +26,6 @@ for i in range(len(X_test)):
     else:
         X0_test.append(X_test[i])
 
-# train, validation, test dataset for hybrid distance model
-X1_train_distance, X0_train_distance = torch.tensor(X1_train).to(device), torch.tensor(X0_train).to(device)
-X1_valid_distance, X0_valid_distance = torch.tensor(X1_test[:300]).to(device), torch.tensor(X0_test[:300]).to(device)
-X1_test_distance, X0_test_distance = torch.tensor(X1_test[300:]).to(device), torch.tensor(X0_test[300:]).to(device)
-
 #make new data for hybrid model
 def new_data(batch_size, X, Y):
     X1_new, X2_new, Y_new = [], [], []
@@ -145,6 +140,13 @@ def train_models(model_name):
     torch.save(model.state_dict(), f'Results/{model_name}.pt')
 
 
+# Use this part when training for the distance Model
+# train, validation, test dataset for hybrid distance model
+#X1_train_distance, X0_train_distance = torch.tensor(X1_train).to(device), torch.tensor(X0_train).to(device)
+#X1_valid_distance, X0_valid_distance = torch.tensor(X1_test[:300]).to(device), torch.tensor(X0_test[:300]).to(device)
+#X1_test_distance, X0_test_distance = torch.tensor(X1_test[300:]).to(device), torch.tensor(X0_test[300:]).to(device)
+
+
 # Train distance model1 and distance model2
 def train_distance_models(model_name):
     train_loss, valid_loss = [], []
@@ -199,10 +201,10 @@ def train_distance_models(model_name):
 
 def train(model_names):
     for model_name in model_names:
-        if model_name in ['Model1_Fidelity', 'Model1_HSinner', 'Model2_Fidelity', 'Model2_HSinner']:
+        if model_name in ['Model1_Fidelity', 'Model1_HSinner', 'Model2_Fidelity', 'Model2_HSinner', 'Model_Amplitude']:
             train_models(model_name)
         elif model_name in ['DistanceModel1_Trace', 'DistanceModel1_HS', 'DistanceModel2_Trace', 'DistanceModel2_HS']:
             train_distance_models(model_name)
 
-model_names = ['Model1_Fidelity', 'Model1_HSinner', 'Model2_Fidelity', 'Model2_HSinner']
+model_names = ['Model_Amplitude']
 train(model_names)
