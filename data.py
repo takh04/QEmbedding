@@ -41,21 +41,15 @@ def data_load_and_process(dataset, ROI, feature_reduction='resize256', classes=[
         x_train, x_test = tf.squeeze(x_train).numpy(), tf.squeeze(x_test).numpy()
     
 
-
-    if feature_reduction == 'PCA8':
-        X_train = PCA(8).fit_transform(x_train)
-        X_test = PCA(8).fit_transform(x_test)
-        x_train, x_test = [], []
-        for x in X_train:
-            x = (x - x.min()) * (np.pi / (x.max() - x.min()))
-            x_train.append(x)
-        for x in X_test:
-            x = (x - x.min()) * (np.pi / (x.max() - x.min()))
-            x_test.append(x)
-    
-    if feature_reduction == 'PCA4':
-        X_train = PCA(4).fit_transform(x_train)
-        X_test = PCA(4).fit_transform(x_test)
+    if feature_reduction in ['PCA16', 'PCA8', 'PCA4']:
+        if feature_reduction == 'PCA16':
+            dim_reduct = 16
+        if feature_reduction == 'PCA8':
+            dim_reduct = 8
+        if feature_reduction == 'PCA4':
+            dim_reduct = 4
+        X_train = PCA(dim_reduct).fit_transform(x_train)
+        X_test = PCA(dim_reduct).fit_transform(x_test)
         x_train, x_test = [], []
         for x in X_train:
             x = (x - x.min()) * (np.pi / (x.max() - x.min()))

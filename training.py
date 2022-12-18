@@ -10,7 +10,8 @@ batch_size = 25
 iterations = 1000
 
 #load data
-feature_reduction = 'PCA8'
+#feature_reduction = 'PCA8'
+feature_reduction = 'PCA16'     #use this when training Model_Amplitude
 classes = [0,1]
 X_train, X_test, Y_train, Y_test = data.data_load_and_process('mnist', '2', feature_reduction=feature_reduction, classes=classes)
 
