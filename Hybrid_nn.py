@@ -155,10 +155,12 @@ class Model3_Fidelity(torch.nn.Module):
     def forward(self, x1, x2):
         x1 = self.layer1(x1)
         x1 = self.layer2(x1)
+        x1 = x1.view(-1, 7 * 7)
         x1 = self.fc(x1)
 
         x2 = self.layer1(x2)
         x2 = self.layer2(x2)
+        x2 = x2.view(-1, 7 * 7)
         x2 = self.fc(x2)
 
         x = torch.concat([x1, x2], 1)
