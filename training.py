@@ -141,12 +141,22 @@ def train_models(model_name):
     f.close()
     torch.save(model.state_dict(), f'Results/{model_name}.pt')
 
+def train(model_names):
+    for model_name in model_names:
+        train_models(model_name)
 
-# Use this part when training for the distance Model
-# train, validation, test dataset for hybrid distance model
-#X1_train_distance, X0_train_distance = torch.tensor(X1_train).to(device), torch.tensor(X0_train).to(device)
-#X1_valid_distance, X0_valid_distance = torch.tensor(X1_test[:300]).to(device), torch.tensor(X0_test[:300]).to(device)
-#X1_test_distance, X0_test_distance = torch.tensor(X1_test[300:]).to(device), torch.tensor(X0_test[300:]).to(device)
+model_names = ['Model3_Fidelity']
+train(model_names)
+
+"""
+This part of the code implements training of the distance models that directly uses trace distance as loss function.
+Distance models are currently out of interest as they are not efficiently calculable with quantum computers.
+They are commented out for now. Use them when needed for comparison purposes.
+
+
+X1_train_distance, X0_train_distance = torch.tensor(X1_train).to(device), torch.tensor(X0_train).to(device)
+X1_valid_distance, X0_valid_distance = torch.tensor(X1_test[:300]).to(device), torch.tensor(X0_test[:300]).to(device)
+X1_test_distance, X0_test_distance = torch.tensor(X1_test[300:]).to(device), torch.tensor(X0_test[300:]).to(device)
 
 
 # Train distance model1 and distance model2
@@ -200,13 +210,7 @@ def train_distance_models(model_name):
     f.close()
     torch.save(model.state_dict(), f'Results/{model_name}.pt')
 
-
-def train(model_names):
+def train_distance(model_names):
     for model_name in model_names:
-        if model_name in ['Model1_Fidelity', 'Model1_HSinner', 'Model2_Fidelity', 'Model2_HSinner', 'Model_Amplitude']:
-            train_models(model_name)
-        elif model_name in ['DistanceModel1_Trace', 'DistanceModel1_HS', 'DistanceModel2_Trace', 'DistanceModel2_HS']:
-            train_distance_models(model_name)
-
-model_names = ['Model_Amplitude']
-train(model_names)
+        train_distance_models(model_name)
+"""
