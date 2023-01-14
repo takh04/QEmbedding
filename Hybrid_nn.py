@@ -6,7 +6,15 @@ import embedding
 dev = qml.device('default.qubit', wires=8)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Hybrid Model 1
+
+
+
+"""
+This part is a code for Hybrid Model 1.
+Hybrid Model 1 transforms 8 dimensional features to 8 dimensional features using Fully connected classical NN.
+Model1_Fidelity uses fideliy as a loss function.
+Model1_HSinner uses Hilbert-Schmidt inner product as a loss function.
+"""
 @qml.qnode(dev, interface="torch")
 def circuit1(inputs): 
     embedding.QuantumEmbedding1(inputs[0:8])
@@ -17,7 +25,6 @@ class Model1_Fidelity(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.qlayer1 = qml.qnn.TorchLayer(circuit1, weight_shapes={})
-        self.matrix_fn1 = qml.matrix(circuit1)
         self.linear_relu_stack1 = nn.Sequential(
             nn.Linear(8, 10),
             nn.ReLU(),
@@ -32,11 +39,9 @@ class Model1_Fidelity(torch.nn.Module):
         x = self.qlayer1(x)
         return x[:,0]
 
-
 class Model1_HSinner(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        self.qlayer1 = qml.qnn.TorchLayer(circuit1, weight_shapes={})
         self.matrix_fn1 = qml.matrix(circuit1)
         self.linear_relu_stack1 = nn.Sequential(
             nn.Linear(8, 10),
@@ -55,7 +60,14 @@ class Model1_HSinner(torch.nn.Module):
 
 
 
-# Hybrid Model 2
+
+"""
+This part is a code for Hybrid Model 2.
+Hybrid Model 2 transforms 8 dimensional features to 16 dimensional features.
+16 dimensional output is used as a rotation angle of ZZ feature embedding.
+Model2_Fidelity uses fidelity loss as a loss function.
+Model2_HSinner uses Hilbert-Schmidt inner product as a loss function.
+"""
 @qml.qnode(dev, interface="torch")
 def circuit2(inputs): 
     embedding.QuantumEmbedding2(inputs[0:16])
@@ -102,6 +114,108 @@ class Model2_HSinner(torch.nn.Module):
         return x / 2**8
 
 
+
+
+
+"""
+This part of code implements Hybrid Model 3.
+Hybrid Model 3 transforms 28 * 28 dimensional features to 16 dimensional features using CNN.
+16 dimensional features are used as a rotation angle of the ZZ feature embedding.
+Model3_Fidelity uses fidelity loss as a loss function.
+Model3_HSinner uses Hilbert Schmidt inner as a loss function.
+"""
+@qml.qnode(dev, interface="torch")
+def circuit3(inputs): 
+    embedding.QuantumEmbedding2(inputs[0:16])
+    embedding.QuantumEmbedding2_inverse(inputs[16:32])
+    return qml.probs(wires=range(8))
+
+class Model3_Fidelity(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        # Layer1: 28 * 28 -> 14 * 14
+        self.layer1 = torch.nn.Sequential(
+            torch.nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+
+        # Layer2: 14 * 14 -> 7 * 7
+        self.layer2 = torch.nn.Sequential(
+            torch.nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+
+        # Fully connected Layers 7 * 7 -> 16
+        self.fc = torch.nn.Linear(7 * 7, 16, bias=True)
+
+        self.qlayer3 = qml.qnn.TorchLayer(circuit3, weight_shapes={})
+
+    def forward(self, x1, x2):
+        x1 = self.layer1(x1)
+        x1 = self.layer2(x1)
+        x1 = self.fc(x1)
+
+        x2 = self.layer1(x2)
+        x2 = self.layer2(x2)
+        x2 = self.fc(x2)
+
+        x = torch.concat([x1, x2], 1)
+        x = self.qlayer3(x)
+        return x[:,0]
+
+class Model3_HSinner(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.matrix_fn2 = qml.matrix(circuit2)
+        # Layer1: 28 * 28 -> 14 * 14
+        self.layer1 = torch.nn.Sequential(
+            torch.nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+
+        # Layer2: 14 * 14 -> 7 * 7
+        self.layer2 = torch.nn.Sequential(
+            torch.nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+
+        # Fully connected Layers 7 * 7 -> 16
+        self.fc = torch.nn.Linear(7 * 7, 16, bias=True)
+    def forward(self, x1, x2):
+        x1 = self.linear_relu_stack2(x1)
+        x2 = self.linear_relu_stack2(x2)
+        x = torch.concat([x1, x2], 1).to("cpu")
+        x = [torch.real(torch.trace(self.matrix_fn2(a))) for a in x]
+        x = torch.stack(x, dim=0).to(device)
+        return x / 2**8
+
+
+
+
+# Training Amplitude Model
+class Model_Amplitude(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(16,32),
+            nn.ReLU(),
+            nn.Linear(32,32),
+            nn.ReLU(),
+            nn.Linear(32,16)
+        )
+    def forward(self, x1, x0):
+        x1 = self.linear_relu_stack(x1)
+        x0 = self.linear_relu_stack(x0)
+        return torch.sum(x1 * x0, dim=-1)
+
+"""
+Below are hybrid models that uses distance as a loss function.
+The codes are out of interest as the are not efficiently calculable with quantum computers.
+Use for comparison purposes.
 # Hybrid Distance Model1
 @qml.qnode(dev, interface="torch")
 def distance_circuit1(inputs): 
@@ -202,23 +316,7 @@ class DistanceModel2_HS(torch.nn.Module):
         rho0 = torch.sum(rhos0, dim=0) / len(x0)
         rho_diff = rho1 - rho0
         return -0.5 * torch.trace(rho_diff @ rho_diff)
-
-
-# Training Amplitude Model
-class Model_Amplitude(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(16,32),
-            nn.ReLU(),
-            nn.Linear(32,32),
-            nn.ReLU(),
-            nn.Linear(32,16)
-        )
-    def forward(self, x1, x0):
-        x1 = self.linear_relu_stack(x1)
-        x0 = self.linear_relu_stack(x0)
-        return torch.sum(x1 * x0, dim=-1)
+"""
 
 # Get model function
 def get_model(model):
@@ -230,6 +328,13 @@ def get_model(model):
         return Model2_Fidelity()
     elif model == 'Model2_HSinner':
         return Model2_HSinner()
+    elif model == 'Model3_Fidelity':
+        return Model3_Fidelity()
+    elif model == 'Model3_HSinner':
+        return Model3_HSinner()
+    elif model == 'Model_Amplitude':
+        return  Model_Amplitude()
+    """
     elif model == 'DistanceModel1_Trace':
         return DistanceModel1_Trace()
     elif model == 'DistanceModel1_HS':
@@ -238,5 +343,4 @@ def get_model(model):
         return DistanceModel2_Trace()
     elif model == 'DistanceModel2_HS':
         return DistanceModel2_HS()
-    elif model == 'Model_Amplitude':
-        return  Model_Amplitude()
+    """
