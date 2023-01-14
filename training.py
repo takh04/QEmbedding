@@ -6,28 +6,16 @@ import numpy as np
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Uisng Device: {device}\n")
 
+
+# High-level tunable parameters
 batch_size = 25
-#iterations = 1000
-iterations = 2000              #use this when training Model_Amplitude
+iterations = 1000
+feature_reduction = False   #'PCA4', 'PCA8', 'PCA16' also available
+classes = [0, 1]
+
 
 #load data
-#feature_reduction = 'PCA8'
-feature_reduction = 'PCA16'     #use this when training Model_Amplitude
-classes = [0,1]
-X_train, X_test, Y_train, Y_test = data.data_load_and_process('mnist', '2', feature_reduction=feature_reduction, classes=classes)
-
-X1_train, X0_train, X1_test, X0_test = [], [], [], []
-for i in range(len(X_train)):
-    if Y_train[i] == 1:
-        X1_train.append(X_train[i])
-    else:
-        X0_train.append(X_train[i])
-for i in range(len(X_test)):
-    if Y_test[i] == 1:
-        X1_test.append(X_test[i])
-    else:
-        X0_test.append(X_test[i])
-
+X_train, X_test, Y_train, Y_test = data.data_load_and_process('mnist', feature_reduction=feature_reduction, classes=classes)
 #make new data for hybrid model
 def new_data(batch_size, X, Y):
     X1_new, X2_new, Y_new = [], [], []
@@ -39,15 +27,23 @@ def new_data(batch_size, X, Y):
             Y_new.append(1)
         else:
             Y_new.append(0)
-    return torch.tensor(X1_new).to(device), torch.tensor(X2_new).to(device), torch.tensor(Y_new).to(device)
 
+    X1_new, X2_new, Y_new = torch.tensor(X1_new).to(torch.float32), torch.tensor(X2_new).to(torch.float32), torch.tensor(Y_new).to(torch.float32)
+    if feature_reduction == False:
+        X1_new = X1_new.permute(0, 3, 1, 2)
+        X2_new = X2_new.permute(0, 3, 1, 2)
+    return X1_new.to(device), X2_new.to(device), Y_new.to(device)
+
+# Generate Validation and Test datasets
 N_valid, N_test = 500, 10000
 X1_new_valid, X2_new_valid, Y_new_valid = new_data(N_valid, X_test, Y_test)
 X1_new_test, X2_new_test, Y_new_test = new_data(N_test, X_test, Y_test)
 
 
+
+
 # Early Stopping and Accuracy
-class EarlyStoppter:
+class EarlyStopper:
     def __init__(self, patience=1, min_delta=0):
         self.patience = patience
         self.min_delta = min_delta
@@ -65,6 +61,8 @@ class EarlyStoppter:
         return False
 
 
+
+
 def accuracy(predictions, labels):
     correct90, correct80 = 0, 0
     for p,l in zip(predictions, labels):
@@ -75,22 +73,21 @@ def accuracy(predictions, labels):
     return correct90 / len(predictions) * 100, (correct80 + correct90) / len(predictions) * 100, 
 
 
-# Train model1 and model2
+
+
 def train_models(model_name):
     train_loss, valid_loss, valid_acc90, valid_acc80 = [], [], [], []
     model = Hybrid_nn.get_model(model_name).to(device)
     model.train()
-    early_stopper = EarlyStoppter(patience=10, min_delta=0)
+    early_stopper = EarlyStopper(patience=10, min_delta=0)
     early_stopped, final_it = False, 0
 
     loss_fn = torch.nn.MSELoss()
     opt = torch.optim.SGD(model.parameters(), lr=0.01)
     for it in range(iterations):
-        X1_batch, X2_batch, Y_batch = new_data(batch_size, X_train, Y_train)
-        X1_batch, X2_batch, Y_batch = X1_batch.to(device), X2_batch.to(device), Y_batch.to(device)
 
+        X1_batch, X2_batch, Y_batch = new_data(batch_size, X_train, Y_train)
         pred = model(X1_batch, X2_batch)
-        pred, Y_batch = pred.to(torch.float32), Y_batch.to(torch.float32)
         loss = loss_fn(pred, Y_batch)
         train_loss.append(loss.item())
 
@@ -145,7 +142,7 @@ def train(model_names):
     for model_name in model_names:
         train_models(model_name)
 
-model_names = ['Model3_Fidelity']
+model_names = ['Model3_Fidelity', 'Model3_HSinner']
 train(model_names)
 
 """
@@ -153,6 +150,18 @@ This part of the code implements training of the distance models that directly u
 Distance models are currently out of interest as they are not efficiently calculable with quantum computers.
 They are commented out for now. Use them when needed for comparison purposes.
 
+
+X1_train, X0_train, X1_test, X0_test = [], [], [], []
+for i in range(len(X_train)):
+    if Y_train[i] == 1:
+        X1_train.append(X_train[i])
+    else:
+        X0_train.append(X_train[i])
+for i in range(len(X_test)):
+    if Y_test[i] == 1:
+        X1_test.append(X_test[i])
+    else:
+        X0_test.append(X_test[i])
 
 X1_train_distance, X0_train_distance = torch.tensor(X1_train).to(device), torch.tensor(X0_train).to(device)
 X1_valid_distance, X0_valid_distance = torch.tensor(X1_test[:300]).to(device), torch.tensor(X0_test[:300]).to(device)
