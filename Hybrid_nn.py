@@ -187,9 +187,20 @@ class Model3_HSinner(torch.nn.Module):
 
         # Fully connected Layers 7 * 7 -> 16
         self.fc = torch.nn.Linear(7 * 7, 16, bias=True)
+
+
     def forward(self, x1, x2):
-        x1 = self.linear_relu_stack2(x1)
-        x2 = self.linear_relu_stack2(x2)
+        x1 = self.layer1(x1)
+        x1 = self.layer2(x1)
+        x1 = x1.view(-1, 7 * 7)
+        x1 = self.fc(x1)
+
+        x2 = self.layer1(x2)
+        x2 = self.layer2(x2)
+        x2 = x2.view(-1, 7 * 7)
+        x2 = self.fc(x2)
+
+        
         x = torch.concat([x1, x2], 1).to("cpu")
         x = [torch.real(torch.trace(self.matrix_fn2(a))) for a in x]
         x = torch.stack(x, dim=0).to(device)
