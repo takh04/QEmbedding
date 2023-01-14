@@ -70,4 +70,3 @@ def data_load_and_process(dataset, feature_reduction='resize256', classes=[0,1])
             x = (x - x.min()) * (np.pi / (x.max() - x.min()))
             x_test.append(x)
         return x_train, x_test, y_train, y_test
-
