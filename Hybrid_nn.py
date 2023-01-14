@@ -170,7 +170,7 @@ class Model3_Fidelity(torch.nn.Module):
 class Model3_HSinner(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        self.matrix_fn2 = qml.matrix(circuit2)
+        self.matrix_fn3 = qml.matrix(circuit3)
         # Layer1: 28 * 28 -> 14 * 14
         self.layer1 = torch.nn.Sequential(
             torch.nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1),
@@ -202,7 +202,7 @@ class Model3_HSinner(torch.nn.Module):
 
         
         x = torch.concat([x1, x2], 1).to("cpu")
-        x = [torch.real(torch.trace(self.matrix_fn2(a))) for a in x]
+        x = [torch.real(torch.trace(self.matrix_fn3(a))) for a in x]
         x = torch.stack(x, dim=0).to(device)
         return x / 2**8
 
