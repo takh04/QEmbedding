@@ -47,11 +47,6 @@ def data_load_and_process(dataset, feature_reduction='resize256', classes=[0,1])
 
         
     if feature_reduction == False:
-        x_train, x_test = torch.tensor(x_train).to(torch.float32), torch.tensor(x_test).to(torch.float32)
-        y_train, y_test = torch.tensor(y_train).to(torch.float32), torch.tensor(y_test).to(torch.float32)
-
-        x_train = x_train.permute(0, 3, 1, 2)
-        x_test = x_test.permute(0, 3, 1, 2)
         return x_train, x_test, y_train, y_test
 
 
@@ -74,8 +69,5 @@ def data_load_and_process(dataset, feature_reduction='resize256', classes=[0,1])
         for x in X_test:
             x = (x - x.min()) * (np.pi / (x.max() - x.min()))
             x_test.append(x)
-
-        x_train, x_test = torch.tensor(x_train).to(torch.float32), torch.tensor(x_test).to(torch.float32)
-        y_train, y_test = torch.tensor(y_train).to(torch.float32), torch.tensor(y_test).to(torch.float32)
         return x_train, x_test, y_train, y_test
 
