@@ -142,7 +142,7 @@ def train(model_names):
     for model_name in model_names:
         train_models(model_name)
 
-model_names = ['Model3_Fidelity', 'Model3_HSinner']
+model_names = ['Model3_HSinner']
 train(model_names)
 
 """
