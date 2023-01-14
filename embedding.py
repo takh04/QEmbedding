@@ -3,12 +3,14 @@ from pennylane import numpy as np
 
 N_layers = 3
 
+# exp(ixZ) gate
 def exp_Z(x, wires, inverse=False):
   if inverse == False:
     qml.RZ(-2 * x, wires=wires)
   elif inverse == True:
     qml.RZ(2 * x, wires=wires)
 
+# exp(ixZZ) gate
 def exp_ZZ1(x, wires, inverse=False):
   if inverse == False:
     qml.CNOT(wires=wires)
@@ -19,6 +21,7 @@ def exp_ZZ1(x, wires, inverse=False):
     qml.RZ(2 * x, wires=wires[1])
     qml.CNOT(wires=wires)
 
+# exp(i(pi - x1)(pi - x2)ZZ) gate
 def exp_ZZ2(x1, x2, wires, inverse=False):
   if inverse == False:
     qml.CNOT(wires=wires)
@@ -30,8 +33,7 @@ def exp_ZZ2(x1, x2, wires, inverse=False):
     qml.CNOT(wires=wires)
 
 
-
-# Quantum Embedding 1 for model 1
+# Quantum Embedding 1 for model 1 (Conventional ZZ feature embedding)
 def QuantumEmbedding1(input):
   for i in range(N_layers):
     for j in range(8):
