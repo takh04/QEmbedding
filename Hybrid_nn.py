@@ -202,7 +202,6 @@ class Model3_HSinner(torch.nn.Module):
 
         
         x = torch.concat([x1, x2], 1).to("cpu")
-        print(x.shape)
         x = [torch.real(torch.trace(self.matrix_fn3(a))) for a in x]
         x = torch.stack(x, dim=0).to(device)
         return x / 2**8
