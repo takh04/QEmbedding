@@ -1,3 +1,10 @@
+IMPORTANT:
+Due to my mistake, Loss_histories_Model1_HSinner, weights_Model1_Fidelity, weights_Model1_HSinner are wrong.
+
+Loss_histories_Model1_HSinner -> Loss_histories_not_trained
+weights_Model1_Fidelity -> weights_not_trained
+weights_Model1_HSinner -> weights_not_trained
+
 Loss History Not Trained 1:
 [0.51327683 0.53602444 0.55084375 0.55559226 0.57179423 0.53550976
  0.53746016 0.55657537 0.56343635 0.54558745 0.55063446 0.53722978
