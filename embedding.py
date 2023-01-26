@@ -115,6 +115,36 @@ def Four_QuantumEmbedding2_inverse(input):
       qml.Hadamard(wires=j)
 
 
+# Noisy 4 qubit embedding
+def Noisy_Four_QuantumEmbedding1(input):
+  for j in range(4):
+    qml.Hadamard(wires=j)
+    exp_Z(input[j], wires=j)
+  for k in range(3):
+    exp_ZZ2(input[k], input[k+1], wires=[k,k+1])
+
+def Noisy_Four_QuantumEmbedding1_inverse(input):
+  for k in reversed(range(3)):
+    exp_ZZ2(input[k], input[k+1], wires=[k,k+1], inverse=True)
+  for j in range(4):
+    exp_Z(input[j], wires=j, inverse=True)
+    qml.Hadamard(wires=j)
+
+def Noisy_Four_QuantumEmbedding2(input):
+  for j in range(4):
+    qml.Hadamard(wires=j)
+    exp_Z(input[j], wires=j)
+  for k in range(3):
+    exp_ZZ1(input[4 + k], wires=[k,k+1])
+
+def Noisy_Four_QuantumEmbedding2_inverse(input):
+  for k in reversed(range(3)):
+    exp_ZZ1(input[k+4], wires=[k,k+1], inverse=True)
+  for j in range(4):
+    exp_Z(input[j], wires=j, inverse=True)
+    qml.Hadamard(wires=j)
+
+
 # Add 4 qubit noisy embedding for demonstrations
 def U_SU4(params, wires): # 15 params
     qml.U3(params[0], params[1], params[2], wires=wires[0])
