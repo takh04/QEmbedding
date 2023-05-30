@@ -129,13 +129,32 @@ def Noisy_Four_QuantumEmbedding1_inverse(input):
   for j in range(4):
     exp_Z(input[j], wires=j, inverse=True)
     qml.Hadamard(wires=j)
-
+"""
 def Noisy_Four_QuantumEmbedding2(input):
   for j in range(4):
     qml.Hadamard(wires=j)
     exp_Z(input[j], wires=j)
   for k in range(3):
     exp_ZZ1(input[4 + k], wires=[k,k+1])
+  
+"""
+def Noisy_Four_QuantumEmbedding2(input):
+  def transform(x):
+    if x == 0:
+      X = 12
+    elif x == 1:
+      X = 15
+    elif x == 2:
+      X = 18
+    elif x == 3:
+      X = 21
+    return X
+  
+  for j in range(4):
+    qml.Hadamard(wires=transform(j))
+    exp_Z(input[j], wires=transform(j))
+  for k in range(3):
+    exp_ZZ1(input[4 + k], wires=[transform(k),transform(k+1)])
 
 def Noisy_Four_QuantumEmbedding2_inverse(input):
   for k in reversed(range(3)):
