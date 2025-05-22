@@ -1,3 +1,0 @@
-Test Loss: 0.017129451036453247
-Test Accuracy90: 70.08
-Test Accuracy80: 89.03

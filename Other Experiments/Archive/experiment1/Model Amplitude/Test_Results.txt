@@ -1,4 +1,0 @@
-Test Loss: 0.030571117997169495
-Test Accuracy90: 71.34
-Test Accuracy80: 87.28
-Validation Loss converged. Early Stopped at iterations 1090
